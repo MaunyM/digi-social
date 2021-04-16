@@ -12,7 +12,7 @@ const corsOptions = {
 app.use(cors(corsOptions))
 
 app.get("/api/message", (req, rep) => {
-  rep.json({ content: "Bonjour !" });
+  rep.json([{ content: "Bonjour !" }]);
 });
 
 const port = process.env.PORT || 8000;
