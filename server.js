@@ -5,10 +5,8 @@ const jwtMiddelware = require("express-jwt");
 require("dotenv").config();
 
 const { userRouter } = require("./user/router.js");
-
-const Sequelize = require("sequelize");
-
-const sequelize = new Sequelize("sqlite:database.db");
+const { comptoirRouter } = require("./comptoir/router.js");
+const  sequelize  = require("./sequelize");
 
 const app = express();
 
@@ -46,7 +44,8 @@ app.use((err, req, rep, next) => {
 
 const port = process.env.PORT || 8000;
 
-app.use("/user", userRouter(sequelize, SECRET));
+app.use("/user", userRouter(SECRET));
+app.use("/comptoir", comptoirRouter());
 
 sequelize
   .sync()

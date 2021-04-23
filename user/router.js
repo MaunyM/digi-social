@@ -1,14 +1,11 @@
 const express = require("express");
-const { modelUser } = require("./model");
 const { Service } = require("./service");
 
 const router = express.Router();
 
-exports.userRouter = (sequelize, secret) => {
-  // Le model de base de données
-  const USER = modelUser(sequelize);
+exports.userRouter = (secret) => {
   // Le service metier
-  const service = Service(USER, secret);
+  const service = Service(secret);
 
   /**
    * Cette route renvoie l'utilisateur connecté
@@ -24,12 +21,12 @@ exports.userRouter = (sequelize, secret) => {
     service.addFriend(req.user, req.body).then((user) => rep.json(user));
   });
 
-    /**
+  /**
    * Cette route permet de récuperer les amis à l'utilisateur connecté
    */
-     router.get("/me/friend", (req, rep) => {
-      service.friend(req.user).then((user) => rep.json(user));
-    });
+  router.get("/me/friend", (req, rep) => {
+    service.friend(req.user).then((user) => rep.json(user));
+  });
 
   /**
    * Cette route permet de se connecter
@@ -37,12 +34,21 @@ exports.userRouter = (sequelize, secret) => {
    */
   router.post("/login", (req, rep) => {
     const { login, password } = req.body;
-    console.log('POST / ', req.body)
+    console.log("POST / ", req.body);
     service
       .logUser(login, password)
       .then((token) =>
         token ? rep.json({ token }) : rep.status(403).json({ error: "oups" })
       );
+  });
+
+  /**
+   * Cette route permet de récuperer une liste de tous les utilisateurs.
+   * si le client est connecté, on envoie le profile complet sinon juste le login
+   * dans un vrai projet, cette liste est paginée
+   */
+  router.get("/", (req, rep) => {
+    service.allRedacted().then((data) => rep.json(data));
   });
 
   /**

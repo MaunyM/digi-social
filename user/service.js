@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const sequelize = require("../sequelize");
 const saltRounds = 10;
 
 const jwt = require("jsonwebtoken");
@@ -13,9 +14,9 @@ const compare = async (password, hash) => {
   return await bcrypt.compare(password, hash);
 };
 
-exports.Service = (MODEL, secret) => {
-
-  const clean = ({login}) => ({login})
+exports.Service = (secret) => {
+  const clean = ({ login }) => ({ login });
+  const { USER } = sequelize.models;
   /**
    * Essayes de deconnecter un utilisateur
    * @param {*} login chaine de caracteres
@@ -23,7 +24,7 @@ exports.Service = (MODEL, secret) => {
    * @returns un JWT en cas de succés
    */
   const logUser = async (login, password) => {
-    const user = await MODEL.findOne({ where: { login } });
+    const user = await USER.findOne({ where: { login } });
     const valid = await compare(password, user.hash);
     if (!valid) return;
     const { role } = user;
@@ -39,7 +40,21 @@ exports.Service = (MODEL, secret) => {
    */
   const create = async (user) => {
     const hashedPassword = await hash(user.password);
-    return await MODEL.create({ ...user, hash: hashedPassword, role: VIEWER });
+    return await USER.create({ ...user, hash: hashedPassword, role: VIEWER });
+  };
+
+  /**
+   * @returns tous les utilisateurs
+   */
+  const all = async () => {
+    return await USER.findAll();
+  };
+
+  /**
+   * @returns  le login de tous les utilisateurs
+   */
+  const allRedacted = async () => {
+    return await USER.findAll({ attributes: ["login"] });
   };
 
   /**
@@ -49,8 +64,8 @@ exports.Service = (MODEL, secret) => {
    * @returns l'utilisateur connecté
    */
   const addFriend = async ({ login }, { login: friendLogin }) => {
-    const user = await MODEL.findOne({ where: { login } });
-    const friend = await MODEL.findOne({ where: { login: friendLogin } });
+    const user = await USER.findOne({ where: { login } });
+    const friend = await USER.findOne({ where: { login: friendLogin } });
     user.addFriend(friend);
     return await user.save();
   };
@@ -61,7 +76,7 @@ exports.Service = (MODEL, secret) => {
    * @returns l'utilisateur connecté
    */
   const me = async ({ login }) => {
-    const { role } = await MODEL.findOne({ where: { login } });
+    const { role } = await USER.findOne({ where: { login } });
     return { login, role };
   };
 
@@ -71,9 +86,12 @@ exports.Service = (MODEL, secret) => {
    * @returns l'utilisateur
    */
   const friend = async ({ login }) => {
-    const {friend} = await MODEL.findOne({ include:'friend', where: { login } });
-    return friend.map(clean) ;
+    const { friend } = await USER.findOne({
+      include: "friend",
+      where: { login },
+    });
+    return friend.map(clean);
   };
 
-  return { logUser, create, me, friend, addFriend };
+  return { logUser, create, me, all, allRedacted, friend, addFriend };
 };
