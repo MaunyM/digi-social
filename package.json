@@ -25,6 +25,7 @@
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
     "sequelize": "^6.6.2",
+    "socket.io": "^4.0.1",
     "sqlite3": "^5.0.2"
   },
   "devDependencies": {

@@ -37,9 +37,10 @@ exports.userRouter = (secret) => {
     console.log("POST / ", req.body);
     service
       .logUser(login, password)
-      .then((token) =>
-        token ? rep.json({ token }) : rep.status(403).json({ error: "oups" })
-      );
+      .then((token) => rep.json({ token }))
+      .catch(() => {
+        rep.status(403).json({ error: "oups" });
+      });
   });
 
   /**
@@ -56,7 +57,7 @@ exports.userRouter = (secret) => {
    * Le body de la requete doit contenir le mot de passe et le login
    */
   router.post("/", (req, rep) => {
-    service.create(req.body).then(() => rep.json(req.body));
+    service.create(req.body).then((token) => rep.json({token}));
   });
 
   return router;

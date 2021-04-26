@@ -1,12 +1,14 @@
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
 const jwtMiddelware = require("express-jwt");
 
-require("dotenv").config();
-
 const { userRouter } = require("./user/router.js");
 const { comptoirRouter } = require("./comptoir/router.js");
-const  sequelize  = require("./sequelize");
+const sequelize = require("./sequelize");
+const { socket } = require("./socket");
+
+require("dotenv").config();
 
 const app = express();
 
@@ -47,8 +49,12 @@ const port = process.env.PORT || 8000;
 app.use("/user", userRouter(SECRET));
 app.use("/comptoir", comptoirRouter());
 
+const httpServer = http.createServer(app);
+
+socket(httpServer, corsOptions);
+
 sequelize
   .sync()
   .then(() =>
-    app.listen(port, () => console.log(`En écoute sur le port ${port}`))
+    httpServer.listen(port, () => console.log(`En écoute sur le port ${port}`))
   );

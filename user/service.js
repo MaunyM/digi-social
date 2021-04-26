@@ -18,15 +18,16 @@ exports.Service = (secret) => {
   const clean = ({ login }) => ({ login });
   const { USER } = sequelize.models;
   /**
-   * Essayes de deconnecter un utilisateur
+   * Essayes de connecter un utilisateur
    * @param {*} login chaine de caracteres
    * @param {*} password  chaine de caracteres
    * @returns un JWT en cas de succés
    */
   const logUser = async (login, password) => {
     const user = await USER.findOne({ where: { login } });
+    if (!user) throw "oups";
     const valid = await compare(password, user.hash);
-    if (!valid) return;
+    if (!valid) throw "oups";
     const { role } = user;
     return jwt.sign({ login, role }, secret, {
       expiresIn: "1h",
@@ -40,7 +41,10 @@ exports.Service = (secret) => {
    */
   const create = async (user) => {
     const hashedPassword = await hash(user.password);
-    return await USER.create({ ...user, hash: hashedPassword, role: VIEWER });
+    const {login, role} = await USER.create({ ...user, hash: hashedPassword, role: VIEWER });
+    return jwt.sign({ login, role }, secret, {
+      expiresIn: "1h",
+    });
   };
 
   /**
@@ -76,8 +80,8 @@ exports.Service = (secret) => {
    * @returns l'utilisateur connecté
    */
   const me = async ({ login }) => {
-    const { role } = await USER.findOne({ where: { login } });
-    return { login, role };
+    const { role, id } = await USER.findOne({ where: { login } });
+    return { login, role, id };
   };
 
   /**
