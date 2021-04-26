@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const jwtMiddelware = require("express-jwt");
+const cookieParser = require("cookie-parser");
 
 const { userRouter } = require("./user/router.js");
 const { comptoirRouter } = require("./comptoir/router.js");
@@ -14,6 +15,7 @@ const app = express();
 
 const corsOptions = {
   origin: process.env.REACT_URL,
+  credentials: true,
 };
 
 /**
@@ -24,7 +26,7 @@ const SECRET = process.env.SECRET;
 
 app.use(
   cors(corsOptions), // On authorise le cors pour l'application en React
-  express.json() // Renseigne l'attribut body de la requete avec le body d'une requete POST
+  express.json() // Renseigne l'attribut body de la requete avec le body d'une requete POST,
 );
 
 /**
@@ -32,7 +34,12 @@ app.use(
  * Cet attribut contient la payload du jeton
  */
 app.use(
-  jwtMiddelware({ secret: SECRET, algorithms: ["HS256"] }).unless({
+  cookieParser(), // Pour récuperer le jwt dans les cookies
+  jwtMiddelware({
+    secret: SECRET,
+    algorithms: ["HS256"],
+    getToken: (req) =>  req.cookies.token,
+  }).unless({
     path: ["/user/login", "/user"],
   })
 );

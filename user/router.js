@@ -11,9 +11,10 @@ exports.userRouter = (secret) => {
    * Cette route renvoie l'utilisateur connecté
    */
   router.get("/me", (req, rep) => {
+    console.log('cookie : ', req.cookies.token)
     service.me(req.user).then((user) => rep.json(user));
   });
-
+ 
   /**
    * Cette route permet d'ajouer un ami à l'utilisateur connecté
    */
@@ -37,8 +38,16 @@ exports.userRouter = (secret) => {
     console.log("POST / ", req.body);
     service
       .logUser(login, password)
-      .then((token) => rep.json({ token }))
-      .catch(() => {
+      .then((token) => {
+        rep.cookie("token", token, {
+          expires: new Date(Date.now() + 604800000),
+          secure: true, // set to true if your using https
+          httpOnly: true,
+        });
+        rep.json({ token });
+      })
+      .catch((err) => {
+        console.log("POST /login", err);
         rep.status(403).json({ error: "oups" });
       });
   });
@@ -57,7 +66,7 @@ exports.userRouter = (secret) => {
    * Le body de la requete doit contenir le mot de passe et le login
    */
   router.post("/", (req, rep) => {
-    service.create(req.body).then((token) => rep.json({token}));
+    service.create(req.body).then((token) => rep.json({ token }));
   });
 
   return router;
